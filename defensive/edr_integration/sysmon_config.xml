@@ -1,0 +1,199 @@
+<Sysmon schemaversion="4.90">
+  <!-- 
+    Sysmon Configuration for Crypter Detection
+    Monitors: Process injection, memory changes, thread creation, API calls
+    Based on 2026 threat intelligence
+  -->
+  
+  <EventFiltering>
+    
+    <!-- Event ID 1: Process Creation -->
+    <RuleGroup name="ProcessCreate" groupRelation="or">
+      <ProcessCreate onmatch="include">
+        <!-- Suspicious parent processes -->
+        <Rule name="Office spawning scripts" groupRelation="and">
+          <ParentImage condition="contains any">winword.exe;excel.exe;powerpnt.exe;outlook.exe</ParentImage>
+          <Image condition="contains any">powershell.exe;cmd.exe;wscript.exe;cscript.exe;mshta.exe</Image>
+        </Rule>
+        
+        <!-- CREATE_SUSPENDED flag (process hollowing) -->
+        <Rule name="Suspended process creation" groupRelation="and">
+          <CommandLine condition="contains">CREATE_SUSPENDED</CommandLine>
+        </Rule>
+        
+        <!-- Encoded commands -->
+        <Rule name="Encoded PowerShell" groupRelation="and">
+          <Image condition="contains">powershell.exe</Image>
+          <CommandLine condition="contains any">-enc;-encodedcommand;-e </CommandLine>
+        </Rule>
+      </ProcessCreate>
+    </RuleGroup>
+    
+    <!-- Event ID 7: Image/DLL Load -->
+    <RuleGroup name="ImageLoad" groupRelation="or">
+      <ImageLoad onmatch="include">
+        <!-- Unsigned DLLs loaded into signed processes -->
+        <Rule name="Unsigned DLL in signed process" groupRelation="and">
+          <Signed condition="is">false</Signed>
+          <ImageLoaded condition="excludes">C:\Windows\System32</ImageLoaded>
+        </Rule>
+        
+        <!-- Reflective DLL injection indicators -->
+        <Rule name="Reflective DLL" groupRelation="or">
+          <ImageLoaded condition="contains">\AppData\Local\Temp\</ImageLoaded>
+          <ImageLoaded condition="contains">\Users\Public\</ImageLoaded>
+        </Rule>
+      </ImageLoad>
+    </RuleGroup>
+    
+    <!-- Event ID 8: CreateRemoteThread -->
+    <RuleGroup name="CreateRemoteThread" groupRelation="or">
+      <CreateRemoteThread onmatch="include">
+        <!-- All remote thread creation (high-value signal) -->
+        <Rule name="Remote thread creation" groupRelation="or">
+          <TargetImage condition="contains any">explorer.exe;svchost.exe;lsass.exe</TargetImage>
+        </Rule>
+        
+        <!-- Suspicious source processes -->
+        <Rule name="Suspicious source" groupRelation="or">
+          <SourceImage condition="contains any">powershell.exe;cmd.exe;wscript.exe;mshta.exe</SourceImage>
+        </Rule>
+      </CreateRemoteThread>
+    </RuleGroup>
+    
+    <!-- Event ID 10: Process Access -->
+    <RuleGroup name="ProcessAccess" groupRelation="or">
+      <ProcessAccess onmatch="include">
+        <!-- PROCESS_VM_WRITE (injection indicator) -->
+        <Rule name="VM Write access" groupRelation="and">
+          <GrantedAccess condition="is">0x1FFFFF</GrantedAccess>
+          <TargetImage condition="contains any">explorer.exe;svchost.exe</TargetImage>
+        </Rule>
+        
+        <!-- PROCESS_VM_OPERATION (VirtualProtect) -->
+        <Rule name="VM Operation" groupRelation="and">
+          <GrantedAccess condition="contains">0x0020</GrantedAccess>
+          <TargetImage condition="excludes">C:\Windows\System32</TargetImage>
+        </Rule>
+        
+        <!-- LSASS access (credential dumping) -->
+        <Rule name="LSASS access" groupRelation="and">
+          <TargetImage condition="contains">lsass.exe</TargetImage>
+          <GrantedAccess condition="contains any">0x1010;0x1410;0x1438</GrantedAccess>
+        </Rule>
+      </ProcessAccess>
+    </RuleGroup>
+    
+    <!-- Event ID 11: File Creation -->
+    <RuleGroup name="FileCreate" groupRelation="or">
+      <FileCreate onmatch="include">
+        <!-- Suspicious file locations -->
+        <Rule name="Temp file creation" groupRelation="or">
+          <TargetFilename condition="contains">\AppData\Local\Temp\</TargetFilename>
+          <TargetFilename condition="contains">\Users\Public\</TargetFilename>
+        </Rule>
+        
+        <!-- Executable files in user directories -->
+        <Rule name="User directory executables" groupRelation="and">
+          <TargetFilename condition="contains">\Users\</TargetFilename>
+          <TargetFilename condition="end with">.exe</TargetFilename>
+        </Rule>
+      </FileCreate>
+    </RuleGroup>
+    
+    <!-- Event ID 13: Registry Value Set -->
+    <RuleGroup name="RegistryEvent" groupRelation="or">
+      <RegistryEvent onmatch="include">
+        <!-- Persistence mechanisms -->
+        <Rule name="Run key persistence" groupRelation="or">
+          <TargetObject condition="contains">CurrentVersion\Run</TargetObject>
+          <TargetObject condition="contains">CurrentVersion\RunOnce</TargetObject>
+        </Rule>
+        
+        <!-- Startup folder -->
+        <Rule name="Startup persistence" groupRelation="or">
+          <TargetObject condition="contains">Microsoft\Windows\Start Menu\Programs\Startup</TargetObject>
+        </Rule>
+        
+        <!-- Service creation -->
+        <Rule name="Service persistence" groupRelation="or">
+          <TargetObject condition="contains">SYSTEM\CurrentControlSet\Services</TargetObject>
+        </Rule>
+      </RegistryEvent>
+    </RuleGroup>
+    
+    <!-- Event ID 22: DNS Query -->
+    <RuleGroup name="DnsQuery" groupRelation="or">
+      <DnsQuery onmatch="include">
+        <!-- Suspicious TLDs -->
+        <Rule name="Suspicious TLD" groupRelation="or">
+          <QueryName condition="end with">.tk</QueryName>
+          <QueryName condition="end with">.ml</QueryName>
+          <QueryName condition="end with">.ga</QueryName>
+          <QueryName condition="end with">.cf</QueryName>
+          <QueryName condition="end with">.gq</QueryName>
+        </Rule>
+        
+        <!-- DGA-like domains (long random strings) -->
+        <Rule name="DGA pattern" groupRelation="and">
+          <QueryName condition="contains">abcdefghijklmnopqrstuvwxyz</QueryName>
+        </Rule>
+      </DnsQuery>
+    </RuleGroup>
+    
+    <!-- Event ID 25: Process Tampering -->
+    <RuleGroup name="ProcessTampering" groupRelation="or">
+      <ProcessTampering onmatch="include">
+        <!-- All process tampering events (hollowing, injection) -->
+        <Rule name="Process tampering" groupRelation="or">
+          <Type condition="is">Image is replaced</Type>
+          <Type condition="is">Image is hollowed</Type>
+        </Rule>
+      </ProcessTampering>
+    </RuleGroup>
+    
+    <!-- Event ID 26: File Delete -->
+    <RuleGroup name="FileDelete" groupRelation="or">
+      <FileDelete onmatch="include">
+        <!-- Deletion of security logs -->
+        <Rule name="Log deletion" groupRelation="or">
+          <TargetFilename condition="contains">\Windows\System32\winevt\Logs\</TargetFilename>
+        </Rule>
+        
+        <!-- Self-deletion (malware cleanup) -->
+        <Rule name="Self deletion" groupRelation="and">
+          <TargetFilename condition="contains">\AppData\Local\Temp\</TargetFilename>
+          <TargetFilename condition="end with">.exe</TargetFilename>
+        </Rule>
+      </FileDelete>
+    </RuleGroup>
+    
+    <!-- Event ID 29: File Executable Detected -->
+    <RuleGroup name="FileExecutableDetected" groupRelation="or">
+      <FileExecutableDetected onmatch="include">
+        <!-- Executables in suspicious locations -->
+        <Rule name="Suspicious location" groupRelation="or">
+          <TargetFilename condition="contains">\AppData\Roaming\</TargetFilename>
+          <TargetFilename condition="contains">\Users\Public\</TargetFilename>
+        </Rule>
+      </FileExecutableDetected>
+    </RuleGroup>
+    
+  </EventFiltering>
+  
+  <!-- Hash Algorithms -->
+  <HashAlgorithms>SHA256,IMPHASH</HashAlgorithms>
+  
+  <!-- Network Monitoring -->
+  <NetworkConnect>true</NetworkConnect>
+  
+  <!-- DNS Monitoring -->
+  <DnsQuery>true</DnsQuery>
+  
+  <!-- Process Tampering Detection -->
+  <ProcessTampering>true</ProcessTampering>
+  
+  <!-- File Delete Detection -->
+  <FileDelete>true</FileDelete>
+  
+</Sysmon>
