@@ -14,8 +14,10 @@ Criptografador multicamadas com criptografia otimizada para montagem e técnicas
 
 <h1 align="center">
   <img src="https://i.imgur.com/dwyUWDH.gif" width="50" />
-  Demo | Demonstração:
+  Demo | Demonstração (Teste com NJRAT):
 </h1>
+
+https://github.com/user-attachments/assets/5321e5e9-0a83-49fb-a2f2-35628dd070a6
 
 ---
 
@@ -106,15 +108,65 @@ cd xor-encrypt
 
 ### Compilação rápida
 
-```bash
-# Compilação padrão (2/72 detecções)
+**Windows:**
+```batch
+REM Compilação padrão (2/72 detecções)
 build.bat
 
-# Compilação avançada com todos os recursos (0-1/72 esperadas)
+REM Compilação avançada com todos os recursos (0-1/72 esperadas)
 build_advanced.bat
+
+REM Sistema de menu interativo
+build_interactive.bat
 ```
 
-Saída: `build\njrat_clean.exe` (padrão) ou `build\njrat_advanced.exe` (avançada)
+**Linux/macOS:**
+```bash
+# Tornar scripts executáveis (apenas primeira vez)
+chmod +x build.sh build_interactive.sh
+
+# Compilação padrão (2/72 detecções)
+./build.sh
+
+# Sistema de menu interativo
+./build_interactive.sh
+```
+
+Saída: `build/njrat_clean.exe` (padrão) ou `build/njrat_advanced.exe` (avançada)
+
+### Scripts de Compilação Multiplataforma
+
+Scripts para Windows (.bat) e Linux/macOS (.sh) são fornecidos com funcionalidade idêntica:
+
+**Argumentos de Linha de Comando:**
+```bash
+# Windows
+build.bat [PAYLOAD] [OUTPUT] [PASSWORD] [LEVEL]
+build.bat payloads\custom.exe output.exe MinhaSenh123 8
+
+# Linux/macOS
+./build.sh [PAYLOAD] [OUTPUT] [PASSWORD] [LEVEL]
+./build.sh payloads/custom.exe output.exe MinhaSenh123 8
+```
+
+**Recursos do Menu Interativo:**
+- Compilação Rápida (usar configuração salva)
+- Compilação Personalizada (especificar parâmetros)
+- Compilação em Lote (processar múltiplos payloads)
+- Gerenciamento de Configuração (salvar/carregar configurações)
+- Teste de Detecção (escanear com ferramentas defensivas)
+- Barras de progresso animadas e saída colorida
+
+**Documentação de Ajuda:**
+```bash
+# Windows
+build.bat --help
+build_interactive.bat --help
+
+# Linux/macOS
+./build.sh --help
+./build_interactive.sh --help
+```
 
 ### Fluxo de trabalho manual
 

