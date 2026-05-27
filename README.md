@@ -1,10 +1,10 @@
 <div align="center">
 
 <h1 align="center">  
-  XOR-Encrypt Advanced
+  Binary Encryption & Loader Research
 </h1>
 
-Multi-layer crypter with assembly-optimized encryption and advanced AV evasion techniques. Achieves 2/72 VirusTotal detections (97.2% evasion rate).
+Research project focused on binary packing, layered encryption, PE internals, build automation, and defensive detection analysis.
 
 **English | [Portuguese](README-pt-br.md)**
 
